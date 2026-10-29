@@ -29,6 +29,9 @@ public:
     // Inline
     static NetGateApp *ptr() { return mspNetGateApp; }
     bool hasActiveTask() { return mHasActiveTask; }
+#ifdef MKDD_LAN_BATTLE
+    JKRArchive *getBattleNameArchive() { return mpBattleNameArc; }
+#endif
 
 private:
     static NetGateApp *mspNetGateApp; // 0x80416a20
@@ -44,5 +47,8 @@ private:
     LANEntry *mpEntry;
     PrintMemoryCard *mpPrintMc;
     bool mHasActiveTask;
+#ifdef MKDD_LAN_BATTLE
+    JKRArchive *mpBattleNameArc;
+#endif
 }; // Size: 0x34
 #endif // NETGATEAPP_H

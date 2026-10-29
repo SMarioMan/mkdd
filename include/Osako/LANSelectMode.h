@@ -202,7 +202,11 @@ private:
     SelectableItemDisp *mDisplayItem;
     Item *mItem;
     Item *mItems[8];
+#ifdef MKDD_LAN_BATTLE
+    ResTIMG *mGameModeImg[4];
+#else
     ResTIMG *mGameModeImg[3];
+#endif
     ResTIMG *mPowerImg[4];
     ResTIMG *mOrderImg[2];
     ResTIMG *mCrsOrderImg[7];

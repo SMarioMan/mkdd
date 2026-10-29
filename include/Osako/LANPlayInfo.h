@@ -25,8 +25,14 @@ public:
     // Inline/Unused
     LANPlayInfo();
 
+#ifdef MKDD_LAN_BATTLE
+    u8 getGameMode() const { return mGameMode; }
+    void setGameMode(u8 mode) { mGameMode = mode; }
+#endif
+
 private:
-    PLACEHOLDER_BYTES(0, 7);
+    u8 mGameMode;
+    PLACEHOLDER_BYTES(1, 7);
     u8 mDispIdx;
     u8 mValueMode;
     PLACEHOLDER_BYTES(9, 0xc);

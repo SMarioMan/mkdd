@@ -121,6 +121,11 @@ parser.add_argument(
     help="builds equivalent (but non-matching) or modded objects",
 )
 parser.add_argument(
+    "--lan-battle",
+    action="store_true",
+    help="enable all three battle modes in LAN play (MarioClub_us only)",
+)
+parser.add_argument(
     "--warn",
     dest="warn",
     type=str,
@@ -134,6 +139,8 @@ parser.add_argument(
     help="disable progress calculation",
 )
 args = parser.parse_args()
+if args.lan_battle and args.version != "MarioClub_us":
+    parser.error("--lan-battle requires the MarioClub_us debug version")
 
 config = ProjectConfig()
 config.version = str(args.version)
@@ -150,7 +157,7 @@ config.objdiff_path = args.objdiff
 config.binutils_path = args.binutils
 config.compilers_path = args.compilers
 config.generate_map = args.map
-config.non_matching = args.non_matching
+config.non_matching = args.non_matching or args.lan_battle
 config.sjiswrap_path = args.sjiswrap
 config.ninja_path = args.ninja
 config.progress = args.progress
@@ -175,7 +182,7 @@ config.asflags = [
     "-mgekko",
     "--strip-local-absolute",
     "-I include",
-    f"-I build/{config.version}/include",
+    f"-I {config.build_dir}/{config.version}/include",
     f"--defsym BUILD_VERSION={version_num}",
 ]
 config.ldflags = [
@@ -214,7 +221,7 @@ cflags_base = [
     "-multibyte",  # For Wii compilers, replace with `-enc SJIS`
     "-i include",
     "-i libs/PowerPC_EABI_Support/include",
-    f"-i build/{config.version}/include",
+    f"-i {config.build_dir}/{config.version}/include",
     f"-DBUILD_VERSION={version_num}",
     f"-DVERSION_{config.version}",
 ]
@@ -226,8 +233,10 @@ elif "_us" in config.version:
 elif "_jp" in config.version:
     cflags_base.extend(["-DREGION_JP=1"])
 
-if not config.non_matching:
+if not args.non_matching:
     cflags_base.extend(["-DMATCHING=1"])
+if args.lan_battle:
+    cflags_base.extend(["-DMKDD_LAN_BATTLE=1"])
 
 # Warning flags
 if args.warn == "all":
@@ -355,7 +364,16 @@ def GameLib(lib_name: str, extra_cflags: List[str], objects: List[Object]) -> Di
 
 Matching = True                   # Object matches and should be linked
 NonMatching = False               # Object does not match and should not be linked
-Equivalent = config.non_matching  # Object should be linked when configured with --non-matching
+Equivalent = args.non_matching  # Do not opt unfinished equivalents into the LAN mod.
+
+if args.lan_battle:
+    from tools.lan_battle import prepare_item_override
+
+    prepare_item_override(config.out_path())
+    config.reconfig_deps.append(Path("tools/lan_battle.py"))
+    config.link_order_callback = lambda module_id, names: (
+        names + ["Osako/LANBattle.cpp"] if module_id == 0 else names
+    )
 
 
 # Object is only matching for specific versions
@@ -1027,7 +1045,7 @@ config.libs = [
             Object(Matching, "JSystem/JUtility/JUTTexture.cpp"),
             Object(Matching, "JSystem/JUtility/JUTVideo.cpp"),
             Object(Matching, "JSystem/JUtility/JUTXfb.cpp"),
-            Object(Matching, "JSystem/JUtility/JUTFontData_Ascfont_fix12.s", extra_asflags=[f"-I build/{config.version}/bin"],)
+            Object(Matching, "JSystem/JUtility/JUTFontData_Ascfont_fix12.s", extra_asflags=[f"-I {config.build_dir}/{config.version}/bin"],)
         ]
     ),
     JSystemLib(
@@ -1253,6 +1271,7 @@ config.libs = [
             Object(NonMatching, "Osako/NetGameMgr.cpp"),
             Object(Matching, "Osako/SequenceApp.cpp"),
             Object(Matching, "Osako/NetGateApp.cpp"),
+            *([Object(Matching, "Osako/LANBattle.cpp")] if args.lan_battle else []),
             Object(Matching, "Osako/TestViewApp.cpp"),
             Object(NonMatching, "Osako/shadowMgr.cpp"),
             Object(Matching, "Osako/shadowScr.cpp"),
@@ -1300,7 +1319,7 @@ config.libs = [
             Object(NonMatching, "Sato/stEmitter.cpp"),
             Object(NonMatching, "Sato/stEffectMgr.cpp"),
             Object(NonMatching, "Sato/stEfctExhaust.cpp"),
-            Object(NonMatching, "Sato/ItemObjMgr.cpp"),
+            Object(NonMatching, "Sato/ItemObjMgr.cpp", asm_dir=config.out_path() / "lan-battle-overrides" if args.lan_battle else None),
             Object(Matching, "Sato/ItemGTurtle.cpp"),
             Object(NonMatching, "Sato/ItemObj.cpp"),
             Object(NonMatching, "Sato/ItemBanana.cpp"),

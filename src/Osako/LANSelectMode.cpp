@@ -17,6 +17,10 @@
 #include "mathHelper.h"
 #include "types.h"
 #include <utility>
+#ifdef MKDD_LAN_BATTLE
+#include "Osako/LANBattle.h"
+#include "Osako/NetGateApp.h"
+#endif
 
 static J2DPicture *spaColorPicture[3];
 
@@ -570,7 +574,15 @@ LANSelectMode::LANSelectMode(JKRArchive *pArchive) : mBackground(pArchive) {
         spaColorPicture[i] = (J2DPicture*)pPane; 
     }
 
+#ifdef MKDD_LAN_BATTLE
+    // LANPlay.arc only contains balloons and shine; use the existing local
+    // battle menu's Bob-omb Blast label without modifying any disc resources.
+    mGameModeImg[LANBattle::Bomb] = (ResTIMG *)NetGateApp::ptr()->getBattleNameArchive()->getResource("timg/Mozi_Battle3.bti");
+    JUT_ASSERT(mGameModeImg[LANBattle::Bomb]);
+    mModeItem = new SelectableItem1('GMM', &mScreen, bck, btk, brk, mGameModeImg, LANBattle::ModeCount);
+#else
     mModeItem = new SelectableItem1('GMM', &mScreen, bck, btk, brk, mGameModeImg, 3);
+#endif
     mPowerItem = new SelectableItem1('POW', &mScreen, bck, btk, brk, mPowerImg, 4);
     mLapItem = new SelectableItem2('LAP', &mScreen, bck, btk, brk);
     mOrderItem = new SelectableItem1('TOU', &mScreen, bck, btk, brk, mCrsOrderImg, 7);
@@ -664,7 +676,11 @@ void LANSelectMode::directView(int i) {
             break;
         }
         case 1:
-        case 2: {
+        case 2:
+#ifdef MKDD_LAN_BATTLE
+        case LANBattle::Bomb:
+#endif
+        {
             mPowerItem->changeColor(cLanColor_0);
             mItemMask |= 2;
             mLapItem->changeColor(cLanColor_0);

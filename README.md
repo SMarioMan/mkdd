@@ -12,6 +12,9 @@ Mario Kart Double Dash!!
 
 WIP 1:1 Decompilation of Mario Kart Double Dash!!
 
+For the optional eight-kart / sixteen-controller LAN battle mod, see
+[LAN battle build and validation instructions](docs/lan-battle.md).
+
 This repository does **not** contain any game assets or assembly whatsoever. An existing copy of the game is required.
 
 Currently only the debug version is supported.

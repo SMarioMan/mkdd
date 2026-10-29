@@ -19,6 +19,10 @@
 #include "Osako/system.h"
 #include "kartLocale.h"
 #include "types.h"
+#ifdef MKDD_LAN_BATTLE
+#include "Osako/LANBattle.h"
+#include "Kaneshige/RaceInfo.h"
+#endif
 #include "mathHelper.h"
 #include "JSystem/JAudio/JASFakeMatch2.h"
 
@@ -58,6 +62,12 @@ void NetGateApp::loadTask(void *) {
     snprintf(buf, sizeof(buf), "/SceneData/%s/lanentry.arc", KartLocale::getLanguageName());
     NetGateApp::ptr()->mpEntryArc = JKRMountArchive(buf, JKRArchive::MOUNT_MEM, NetGateApp::ptr()->mHeap, JKRArchive::MOUNT_DIRECTION_HEAD);
     
+#ifdef MKDD_LAN_BATTLE
+    // Mount before publishing mpSceneArc: calc() uses that pointer as readiness.
+    snprintf(buf, sizeof(buf), "/SceneData/%s/battlename.arc", KartLocale::getLanguageName());
+    NetGateApp::ptr()->mpBattleNameArc = JKRMountArchive(buf, JKRArchive::MOUNT_MEM, NetGateApp::ptr()->mHeap, JKRArchive::MOUNT_DIRECTION_HEAD);
+    JUT_ASSERT(NetGateApp::ptr()->mpBattleNameArc);
+#endif
     snprintf(buf, sizeof(buf), "/SceneData/%s/LANPlay.arc", KartLocale::getLanguageName());
     NetGateApp::ptr()->mpSceneArc = JKRMountArchive(buf, JKRArchive::MOUNT_MEM, NetGateApp::ptr()->mHeap, JKRArchive::MOUNT_DIRECTION_HEAD);
 
@@ -116,7 +126,12 @@ void NetGateApp::waitEntry() {
     switch (mpEntry->calc()) {
     case 1:
         NetGameMgr::ptr()->sleep();
+#ifdef MKDD_LAN_BATTLE
+        LANBattle::applyRaceInfo(gLANPlayInfo, gRaceInfo);
+        ResMgr::loadCourseData(LANBattle::getCourseID(gLANPlayInfo), gLANPlayInfo.getCrsOrder());
+#else
         ResMgr::loadCourseData(gLANPlayInfo.getCrsID(), gLANPlayInfo.getCrsOrder());
+#endif
         mState = 6;
         break;
     case 2:

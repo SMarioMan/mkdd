@@ -17,8 +17,8 @@ SECTIONS
     _db_stack_end = _stack_addr;
     __ArenaLo = (_db_stack_addr + 0x1f) & ~0x1f;
     __ArenaHi = $ARENAHI;
-    _pSystemArc = 0x80316680;
-    _pBuildtimeDat = 0x803608e0;
+    _pSystemArc = lbl_80316680;
+    _pBuildtimeDat = lbl_803608E0;
 }
 
 FORCEACTIVE
